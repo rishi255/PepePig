@@ -1,2 +1,2 @@
 # PepePig
-Discord bot written in python. It's like Peppa Pig, but instead of Peppa Pig, it's Pepe the Frog.
+Another Discord bot, written in python because I was bored.
