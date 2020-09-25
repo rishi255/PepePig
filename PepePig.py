@@ -12,15 +12,7 @@ from googletrans import Translator, LANGCODES
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
-# class HelpCog(commands.Cog):
-#     # def get_command_signature(self, command):
-#     #     return '{0.clean_prefix}{1.qualified_name} - {1.signature}'.format(self, command)
-#     @commands.command(name = 'help')
-#     async def help(self, ctx):
-#         await ctx.send("FINNALLYYYYYYY BITCH ASS")
-
-
-pepe = commands.Bot(command_prefix='pepe ')#, help_command=MyHelpCommand())
+pepe = commands.Bot(command_prefix='pepe ', help_command=None, description="I'm a cute bot made by @rishee#8641")
 
 @pepe.event
 async def on_ready():
@@ -43,19 +35,26 @@ async def on_message(message):
         await message.channel.send(f'lmao {message.author.mention}')
     elif "who" in msg.lower() and "daddy" in msg.lower():
         Rishi = pepe.get_user(425968693424685056)
-        await message.channel.send(f'{Rishi.mention} is my daddy. {pepe.cogs}')
+        await message.channel.send(f'{Rishi.mention} is my daddy.')
 
     await pepe.process_commands(message)
 
-# class HelpCog(commands.Cog):
-#     def __init__(self, bot):
-#         self.bot = bot
-#         self._original_help_command = bot.help_command
-#         bot.help_command = MyHelpCommand()
-#         bot.help_command.cog = self
-    
-#     def cog_unload(self):
-#         self.bot.help_command = self._original_help_command
+class MyHelpCommand(commands.DefaultHelpCommand):
+    def get_command_signature(self, command):
+        return '{0.clean_prefix}{1.qualified_name} - {1.signature}'.format(self, command)
+    @commands.command(name = 'help', hidden=True)
+    async def help(self, ctx):
+        await ctx.send("HELP SCREEN")
+
+class HelpCog(commands.Cog, command_attrs=dict(name="Help", usage="pepe help", hidden=True)):
+    def __init__(self, bot):
+        self.bot = bot
+        self._original_help_command = bot.help_command
+        bot.help_command = MyHelpCommand()
+        bot.help_command.cog = self
+
+    def cog_unload(self):
+        self.bot.help_command = self._original_help_command
 
 class PepeTasks(commands.Cog):
     """
@@ -67,7 +66,8 @@ class PepeTasks(commands.Cog):
     @commands.command(
     pass_context=True, 
     name = 'giveintro',
-    help = "- Gives intro in various languages like a good first year boi."
+    help = "Gives intro in various languages like a good first year boi.",
+    usage = "pepe giveintro <language-name>"
     )
     async def giveintro(self, ctx):
         msg = ctx.message
@@ -95,13 +95,14 @@ class PepeTasks(commands.Cog):
                 sound = discord.File(fp, filename="hindi sound.mp3")
                 await ctx.send(file=sound)
         except:
-            await ctx.send("Enter a valid language you dumbass!" +
-            "\nSyntax: pepe giveintro <language name>")
+            await ctx.send("Please enter a valid language!" +
+            "\nSyntax: pepe giveintro <language-name>" +
+            "\nFor a list of supported languages, use \"pepe languages\"")
 
     @commands.command(
     pass_context=True, 
     name = 'languages',
-    help = "- Lists all supported languages for intro"
+    help = "Lists all supported languages for intro"
     )
     async def languages(self, ctx):
         text = [(lang, code) for lang, code in LANGCODES.items()]
@@ -118,7 +119,7 @@ class UtilityCommands(commands.Cog):
     @commands.command(
     pass_context=True, 
     name = 'clear',
-    help = "- Clears the n most recent messages from (optional) specific user or all users"
+    help = "Clears the n most recent messages from specific/all users"
     )
     async def clear(self, ctx, user: typing.Optional[discord.Member], number: typing.Optional[int] = 1):
         if user is None:
@@ -140,12 +141,43 @@ class UtilityCommands(commands.Cog):
             await ctx.channel.delete_messages(to_delete)
             await ctx.send('{} deleted the last {} message(s) from user {} lol. Ab tu suspense me hi mar'.format(ctx.message.author.name, number, user.display_name))#+'\n'.join([i.content for i in to_delete]))
 
+    @commands.command(
+    pass_context=True,
+    name = 'translate',
+    help = "Translates from english to whatever language you want!",
+    usage = "pepe translate <text> <language-name>"
+    )
+    async def translate(self, ctx):
+        msg = ctx.message
+        words = msg.content.split(' ')
+        to_language = words[-1]
+        text = str()
+        
+        arr = msg.content.split("\"")
+        if len(arr) == 3:
+            text = arr[1]
+        else:
+            text = ' '.join(words[2:-1])
+        
+        try:
+            # LANGCODES has keys as languages, values as codes 
+            code = LANGCODES[to_language]
+            # await ctx.send(f"detected langcode: {code}")
+            trans = Translator()
+            translated_text = trans.translate(text, dest=code)
+            # for x in translated_text:
+            await ctx.send(translated_text.text)#, tts=True)
+        except:
+            await ctx.send("Please enter a valid language!" +
+            "\nSyntax: pepe translate <text> <language-name>" +
+            "\nFor a list of supported languages, use \"pepe languages\"")
+
+
 def setup(pepe):
     pepe.remove_command('help')
     pepe.add_cog(PepeTasks(pepe))
     pepe.add_cog(UtilityCommands(pepe))
-    # pepe.add_cog(HelpCog(pepe))
-
+    pepe.add_cog(HelpCog(pepe))
+    
 setup(pepe)
 pepe.run(TOKEN)
-pepe.clear()
