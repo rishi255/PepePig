@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import discord
 from discord.ext import commands
 from discord.utils import get
-from googletrans import Translator, LANGCODES
+from googletrans import Translator, LANGCODES, LANGUAGES
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -36,7 +36,10 @@ async def on_message(message):
     elif "who" in msg.lower() and "daddy" in msg.lower():
         Rishi = pepe.get_user(425968693424685056)
         await message.channel.send(f'{Rishi.mention} is my daddy.')
-
+    elif msg.lower().startswith('bruh') and msg.lower().endswith('h'):
+        img = discord.File(open("media\satsriakal bruh.jpg", "rb"), filename="satsriakal.jpg")
+        await message.channel.send(file=img)
+        await message.channel.send(f'**Bruh moment successfully reported by {message.author.mention}**')
     await pepe.process_commands(message)
 
 class MyHelpCommand(commands.DefaultHelpCommand):
@@ -144,13 +147,13 @@ class UtilityCommands(commands.Cog):
     @commands.command(
     pass_context=True,
     name = 'translate',
-    help = "Translates from english to whatever language you want!",
-    usage = "pepe translate <text> <language-name>"
+    help = "Translates from detected language to whatever language you want!",
+    usage = "pepe translate <text IN QUOTES> <destination-language>"
     )
     async def translate(self, ctx):
         msg = ctx.message
         words = msg.content.split(' ')
-        to_language = words[-1]
+        to_language = words[-1].lower()
         text = str()
         
         arr = msg.content.split("\"")
@@ -160,14 +163,19 @@ class UtilityCommands(commands.Cog):
             text = ' '.join(words[2:-1])
         
         try:
-            # LANGCODES has keys as languages, values as codes 
-            code = LANGCODES[to_language]
-            # await ctx.send(f"detected langcode: {code}")
+            # LANGCODES has keys as languages, values as codes
+            # LANGUAGES has keys as codes, values as languages 
+        
+            if to_language in LANGCODES: # if language name was passed
+                code = LANGCODES[to_language]
+            elif to_language in LANGUAGES: # if code was passed
+                code = to_language
+
             trans = Translator()
             translated_text = trans.translate(text, dest=code)
-            # for x in translated_text:
             await ctx.send(translated_text.text)#, tts=True)
         except:
+
             await ctx.send("Please enter a valid language!" +
             "\nSyntax: pepe translate <text> <language-name>" +
             "\nFor a list of supported languages, use \"pepe languages\"")
