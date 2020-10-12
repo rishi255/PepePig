@@ -66,8 +66,30 @@ class PepeTasks(commands.Cog):
     usage = "pepe giveintro <language-name>"
     )
     async def giveintro(self, ctx):
-        intro_text = "I'm Pepe Pig (**cRoaK**).\nThis is my little brother George (**mEeP mEeP**),\nthis is mummy pig (**bruh sound effect #2**),\nand this is DADDY FROG (**huge snort**)"        
-        await UtilityCommands(pepe).translate(ctx, intro_text)
+        msg = ctx.message
+        words = msg.content.split(' ')
+        to_language = words[2] # pepe giveintro <langauge>
+
+        intro_text = "I'm Pepe Pig (**cRoaK**).\nThis is my little brother George (**mEeP mEeP**),\nthis is mummy pig (**bruh sound effect #2**),\nand this is DADDY FROG (**huge snort**)"
+    
+        # LANGCODES has keys as languages, values as codes
+        try:
+            # LANGCODES has keys as languages, values as codes
+            # LANGUAGES has keys as codes, values as languages 
+        
+            if to_language in LANGCODES: # if language name was passed
+                code = LANGCODES[to_language]
+            elif to_language in LANGUAGES: # if code was passed
+                code = to_language
+
+            trans = Translator()
+            translated_intro = trans.translate(intro_text, dest=code)
+            await ctx.send(translated_intro.text)
+
+        except:
+            await ctx.send("Please enter a valid language!" +
+            "\nSyntax: pepe giveintro <language-name>" +
+            "\nFor a list of supported languages, use \"pepe languages\"")
 
     @commands.command(
     pass_context=True, 
@@ -77,6 +99,7 @@ class PepeTasks(commands.Cog):
     async def languages(self, ctx):
         text = [(lang, code) for lang, code in LANGCODES.items()]
         await ctx.send('\n'.join([f"{code}: {lang}" for code, lang in text]))
+    
 
 class UtilityCommands(commands.Cog):
     """ 
@@ -116,21 +139,18 @@ class UtilityCommands(commands.Cog):
     help = "Translates from detected language to whatever language you want!",
     usage = "pepe translate <text IN QUOTES> <destination-language>"
     )
-    async def translate(self, ctx, introtext = None):
+    async def translate(self, ctx):
         msg = ctx.message
         words = msg.content.split(' ')
         to_language = words[-1].lower()
-
         text = str()
-        if introtext is None:
-            arr = msg.content.split("\"")
-            if len(arr) == 3:
-                text = arr[1]
-            else:
-                text = ' '.join(words[2:-1])
+        
+        arr = msg.content.split("\"")
+        if len(arr) == 3:
+            text = arr[1]
         else:
-            text = introtext
-
+            text = ' '.join(words[2:-1])
+        
         try:
             # LANGCODES has keys as languages, values as codes
             # LANGUAGES has keys as codes, values as languages 
