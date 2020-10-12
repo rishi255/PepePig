@@ -1,5 +1,4 @@
 asyncio
 discord
 typing
-dotenv
 googletrans
