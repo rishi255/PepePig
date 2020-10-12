@@ -67,7 +67,7 @@ class PepeTasks(commands.Cog):
     )
     async def giveintro(self, ctx):
         intro_text = "I'm Pepe Pig (**cRoaK**).\nThis is my little brother George (**mEeP mEeP**),\nthis is mummy pig (**bruh sound effect #2**),\nand this is DADDY FROG (**huge snort**)"        
-        await UtilityCommands(pepe).translate(ctx)
+        await UtilityCommands(pepe).translate(ctx, intro_text)
 
     @commands.command(
     pass_context=True, 
