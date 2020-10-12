@@ -1,4 +1,3 @@
-os
 asyncio
 discord
 typing
