@@ -3,13 +3,13 @@ import os
 import asyncio
 import discord.file
 import typing
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 import discord
 from discord.ext import commands
 from discord.utils import get
 from googletrans import Translator, LANGCODES, LANGUAGES
 
-load_dotenv()
+# load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
 pepe = commands.Bot(command_prefix='pepe ', help_command=None, description="I'm a cute bot made by @rishee#8641")
