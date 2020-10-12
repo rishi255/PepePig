@@ -68,7 +68,7 @@ class PepeTasks(commands.Cog):
     async def giveintro(self, ctx):
         msg = ctx.message
         words = msg.content.split(' ')
-        to_language = words[2] # pepe giveintro <langauge>
+        to_language = words[-1] # pepe giveintro <langauge>
 
         intro_text = "I'm Pepe Pig (**cRoaK**).\nThis is my little brother George (**mEeP mEeP**),\nthis is mummy pig (**bruh sound effect #2**),\nand this is DADDY FROG (**huge snort**)"
     
