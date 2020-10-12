@@ -3,13 +3,11 @@ import os
 import asyncio
 import discord.file
 import typing
-# from dotenv import load_dotenv
 import discord
 from discord.ext import commands
 from discord.utils import get
 from googletrans import Translator, LANGCODES, LANGUAGES
 
-# load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
 pepe = commands.Bot(command_prefix='pepe ', help_command=None, description="I'm a cute bot made by @rishee#8641")
@@ -22,12 +20,7 @@ async def on_ready():
 
 @pepe.event
 async def on_message(message):
-    if message.author == pepe.user:
-        return
-    
-    Babu = pepe.get_user(707545525960048670)
-    if Babu and message.author == Babu:
-        await message.channel.send(f"{Babu.mention}, babu please maa chuda lol. I'm not interested yaar mujhe sunna hi nahi hai")
+    if message.author == pepe.user: # ignore own messages (to prevent infinite loop)
         return
     
     msg = message.content
@@ -73,34 +66,8 @@ class PepeTasks(commands.Cog):
     usage = "pepe giveintro <language-name>"
     )
     async def giveintro(self, ctx):
-        msg = ctx.message
-        words = msg.content.split(' ')
-        
-        intro_text = "I'm Pepe Pig (**cRoaK**).\nThis is my little brother George (**mEeP mEeP**),\nthis is mummy pig (**bruh sound effect #2**),\nand this is DADDY FROG (**huge snort**)"
-        
-        # LANGCODES has keys as languages, values as codes
-        try:
-            code = LANGCODES[words[2]]
-            await ctx.send(f"detected langcode: {code}")
-            fp = open("media\pepevideo_trim.mp4", "rb")
-            video = discord.File(fp, filename="intro.mp4")
-            # await ctx.send(file=video) # uncomment to send the intro vid
-            
-            trans = Translator()
-            translated_intro = trans.translate(intro_text, dest=code)
-            await ctx.send(translated_intro.text)#, tts=True)
-            if code == "es":
-                fp = open("media\spanishsound.mp3", "rb")
-                sound = discord.File(fp, filename="spanish sound.mp3")
-                await ctx.send(file=sound)
-            elif code == "hi":
-                fp = open("media\hindisound.mp3", "rb")
-                sound = discord.File(fp, filename="hindi sound.mp3")
-                await ctx.send(file=sound)
-        except:
-            await ctx.send("Please enter a valid language!" +
-            "\nSyntax: pepe giveintro <language-name>" +
-            "\nFor a list of supported languages, use \"pepe languages\"")
+        intro_text = "I'm Pepe Pig (**cRoaK**).\nThis is my little brother George (**mEeP mEeP**),\nthis is mummy pig (**bruh sound effect #2**),\nand this is DADDY FROG (**huge snort**)"        
+        UtilityCommands().translate(ctx)
 
     @commands.command(
     pass_context=True, 
@@ -110,7 +77,6 @@ class PepeTasks(commands.Cog):
     async def languages(self, ctx):
         text = [(lang, code) for lang, code in LANGCODES.items()]
         await ctx.send('\n'.join([f"{code}: {lang}" for code, lang in text]))
-    
 
 class UtilityCommands(commands.Cog):
     """ 
@@ -150,18 +116,21 @@ class UtilityCommands(commands.Cog):
     help = "Translates from detected language to whatever language you want!",
     usage = "pepe translate <text IN QUOTES> <destination-language>"
     )
-    async def translate(self, ctx):
+    async def translate(self, ctx, introtext = None):
         msg = ctx.message
         words = msg.content.split(' ')
         to_language = words[-1].lower()
+
         text = str()
-        
-        arr = msg.content.split("\"")
-        if len(arr) == 3:
-            text = arr[1]
+        if introtext is None:
+            arr = msg.content.split("\"")
+            if len(arr) == 3:
+                text = arr[1]
+            else:
+                text = ' '.join(words[2:-1])
         else:
-            text = ' '.join(words[2:-1])
-        
+            text = introtext
+
         try:
             # LANGCODES has keys as languages, values as codes
             # LANGUAGES has keys as codes, values as languages 
@@ -175,7 +144,6 @@ class UtilityCommands(commands.Cog):
             translated_text = trans.translate(text, dest=code)
             await ctx.send(translated_text.text)#, tts=True)
         except:
-
             await ctx.send("Please enter a valid language!" +
             "\nSyntax: pepe translate <text> <language-name>" +
             "\nFor a list of supported languages, use \"pepe languages\"")
