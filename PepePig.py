@@ -4,6 +4,7 @@ import asyncio
 import discord.file
 import typing
 import discord
+import re
 from discord.ext import commands
 from discord.utils import get
 from googletrans import Translator, LANGCODES, LANGUAGES
@@ -34,9 +35,9 @@ async def on_message(message):
         await message.channel.send(file=img)
         await message.channel.send(f'**Bruh moment successfully reported by {message.author.mention}**')
     else:
-        mls = msg.lower().split(' ')
-        if "valo?" in mls or "valorant" in mls:
-            await message.channel.send(f"Haan ruk bro mai aara {message.author.mention}")
+        obj = re.search(r"(valo(rant)?[?]?[\s]?[\$]?)", msg, re.IGNORECASE)
+        if obj:
+            await message.channel.send(f"{message.author.mention} haan ruk bro mai aara")
     
     await pepe.process_commands(message)
 
