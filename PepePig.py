@@ -33,6 +33,11 @@ async def on_message(message):
         img = discord.File(open("media\satsriakal bruh.jpg", "rb"), filename="satsriakal.jpg")
         await message.channel.send(file=img)
         await message.channel.send(f'**Bruh moment successfully reported by {message.author.mention}**')
+    else:
+        mls = msg.lower().split(' ')
+        if "valo?" in mls or "valorant" in mls:
+            await message.channel.send(f"Haan ruk bro mai aara {message.author.mention}")
+    
     await pepe.process_commands(message)
 
 class MyHelpCommand(commands.DefaultHelpCommand):
