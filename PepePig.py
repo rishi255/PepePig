@@ -36,9 +36,9 @@ async def on_message(message):
         await message.channel.send(f'**Bruh moment successfully reported by {message.author.mention}**')
     else:
         obj = re.search(r"(valo(rant)?[?]?[\s]?[\$]?)", msg, re.IGNORECASE)
-        if obj:
+        if obj or "<@&763655495285473300>" in msg.lower():
             await message.channel.send(f"{message.author.mention} haan ruk bro mai aara")
-    
+
     await pepe.process_commands(message)
 
 class MyHelpCommand(commands.DefaultHelpCommand):
