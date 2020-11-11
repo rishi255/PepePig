@@ -1,6 +1,7 @@
 # bot.py
 import os
 import asyncio
+import asyncpg
 import discord.file
 import typing
 import discord
@@ -19,8 +20,15 @@ async def on_ready():
     game = discord.Game(name = "with ur mum")
     await pepe.change_presence(activity=game)
 
+async def init_db():
+    conn = await asyncpg.connect(dsn=os.getenv('DATABASE_URL'))
+    result = await asyncpg.execute("CREATE TABLE IF NOT EXISTS pepepig_users (s_no SERIAL PRIMARY KEY, member_id bigint, score bigint);")
+    return conn
+
 @pepe.event
 async def on_message(message):
+
+    conn = await init_db()
     if message.author == pepe.user: # ignore own messages (to prevent infinite loop)
         return
     
@@ -40,6 +48,7 @@ async def on_message(message):
             await message.channel.send(f"{message.author.mention} haan ruk bro mai aara")
 
     await pepe.process_commands(message)
+    conn.close()
 
 class MyHelpCommand(commands.DefaultHelpCommand):
     def get_command_signature(self, command):
@@ -174,12 +183,11 @@ class UtilityCommands(commands.Cog):
             "\nSyntax: pepe translate <text> <language-name>" +
             "\nFor a list of supported languages, use \"pepe languages\"")
 
-
 def setup(pepe):
     pepe.remove_command('help')
     pepe.add_cog(PepeTasks(pepe))
     pepe.add_cog(UtilityCommands(pepe))
     pepe.add_cog(HelpCog(pepe))
-    
+
 setup(pepe)
 pepe.run(TOKEN)
