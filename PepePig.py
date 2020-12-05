@@ -1,17 +1,16 @@
 # bot.py
-import os
 import asyncio
 import asyncpg
 from asyncpg.exceptions import InvalidPasswordError
-import discord.file
-import typing
 import discord
+from discord.ext import commands
+from discord.ext.commands.core import guild_only
+from googletrans import Translator, LANGCODES, LANGUAGES
+import typing
+import os
 import random
 import re
 import traceback
-from discord.ext import commands
-from discord.utils import get
-from googletrans import Translator, LANGCODES, LANGUAGES
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 
@@ -29,15 +28,12 @@ async def init_db() -> asyncpg.connection.Connection:
     '''CREATE TABLE IF NOT EXISTS pepepig_users (
             s_no SERIAL PRIMARY KEY, 
             member_id bigint, 
-            score bigint
+            score bigint,
+            server_id bigint
         )
     ''')
     print("Create table if not exists done.")
     return conn
-
-# async def check_user_exists(conn):
-#     result = 
-#     return result
 
 @pepe.event
 async def on_message(message):
@@ -48,21 +44,22 @@ async def on_message(message):
         return
 
     author_id = message.author.id
+    guild_id = message.guild.id
 
     try:
         conn = await init_db()
 
-        exists = await conn.fetchval("SELECT EXISTS (SELECT 1 FROM pepepig_users where member_id=$1)", author_id)
+        exists = await conn.fetchval("SELECT EXISTS (SELECT 1 FROM pepepig_users WHERE member_id=$1 AND server_id=$2)", author_id, guild_id)
         print(f"Does user {message.author} exist in db? [{exists}]")
 
         increment_val = random.randint(20, 50)
 
         if exists:
-            new_score = await conn.fetchval("UPDATE pepepig_users SET score=score+$1 WHERE member_id=$2 RETURNING score", increment_val, author_id)
-            print(f"New score for {message.author.display_name} = {new_score}")
+            new_score = await conn.fetchval("UPDATE pepepig_users SET score=score+$1 WHERE member_id=$2 AND server_id=$3 RETURNING score", increment_val, author_id, guild_id)
+            print(f"User already has a score in this server! New score for {message.author.display_name} = {new_score}")
         else:
-            new_score = await conn.fetchval("INSERT INTO pepepig_users (member_id, score) VALUES ($1, $2) RETURNING score", author_id, increment_val)
-            print(f"New score for {message.author.display_name} = {new_score}")
+            new_score = await conn.fetchval("INSERT INTO pepepig_users (member_id, score, server_id) VALUES ($1, $2, $3) RETURNING score", author_id, increment_val, guild_id)
+            print(f"New user entry for this server! New score for {message.author.display_name} = {new_score}")
         
         conn.close()
     except Exception as e:
@@ -241,9 +238,9 @@ class UtilityCommands(commands.Cog):
         conn = await init_db()
         results = None
         if user is None:
-            results = conn.fetch("SELECT * FROM pepepig_users ORDER BY score DESC")
+            results = await conn.fetch("SELECT * FROM pepepig_users WHERE server_id=$1 ORDER BY score DESC", ctx.guild.id)
         else:
-            results = conn.fetch("SELECT * FROM pepepig_users WHERE member_id=$1 ORDER BY score DESC", user.id)
+            results = await conn.fetch("SELECT * FROM pepepig_users WHERE member_id=$1 AND server_id=$2 ORDER BY score DESC", user.id, ctx.guild.id)
         
         for i, record in enumerate(results):
             if i == 0:
