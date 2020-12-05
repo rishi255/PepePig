@@ -2,10 +2,13 @@
 import os
 import asyncio
 import asyncpg
+from asyncpg.exceptions import InvalidPasswordError
 import discord.file
 import typing
 import discord
+import random
 import re
+import traceback
 from discord.ext import commands
 from discord.utils import get
 from googletrans import Translator, LANGCODES, LANGUAGES
@@ -20,35 +23,70 @@ async def on_ready():
     game = discord.Game(name = "with ur mum")
     await pepe.change_presence(activity=game)
 
-async def init_db():
+async def init_db() -> asyncpg.connection.Connection:
     conn = await asyncpg.connect(dsn=os.getenv('DATABASE_URL'))
-    result = await asyncpg.execute("CREATE TABLE IF NOT EXISTS pepepig_users (s_no SERIAL PRIMARY KEY, member_id bigint, score bigint);")
+    await conn.execute(
+    '''CREATE TABLE IF NOT EXISTS pepepig_users (
+            s_no SERIAL PRIMARY KEY, 
+            member_id bigint, 
+            score bigint
+        )
+    ''')
+    print("Create table if not exists done.")
     return conn
+
+# async def check_user_exists(conn):
+#     result = 
+#     return result
 
 @pepe.event
 async def on_message(message):
-
-    conn = await init_db()
-    if message.author == pepe.user: # ignore own messages (to prevent infinite loop)
-        return
     
+    # don't process own messages (to prevent infinite loop, 
+    # and to make sure pepe isn't in the scores database)
+    if message.author == pepe.user:
+        return
+
+    author_id = message.author.id
+
+    try:
+        conn = await init_db()
+
+        exists = await conn.fetchval("SELECT EXISTS (SELECT 1 FROM pepepig_users where member_id=$1)", author_id)
+        print(f"Does user {message.author} exist in db? [{exists}]")
+
+        increment_val = random.randint(20, 50)
+
+        if exists:
+            new_score = await conn.fetchval("UPDATE pepepig_users SET score=score+$1 WHERE member_id=$2 RETURNING score", increment_val, author_id)
+            print(f"New score for {message.author.display_name} = {new_score}")
+        else:
+            new_score = await conn.fetchval("INSERT INTO pepepig_users (member_id, score) VALUES ($1, $2) RETURNING score", author_id, increment_val)
+            print(f"New score for {message.author.display_name} = {new_score}")
+        
+        conn.close()
+    except Exception as e:
+        print(e)
+        print("\nCOULDN'T CONNECT TO DATABASE!")
+
     msg = message.content
+    # ayy -> lmao
     if msg.lower().startswith('ayy') and msg.lower().endswith('y'):
         await message.channel.send(f'lmao {message.author.mention}')
+    # who daddy -> rishee
     elif "who" in msg.lower() and "daddy" in msg.lower():
         Rishi = pepe.get_user(425968693424685056)
         await message.channel.send(f'{Rishi.mention} is my daddy.')
+    # For reporting bruh moment
     elif msg.lower().startswith('bruh') and msg.lower().endswith('h'):
         img = discord.File(open("media\satsriakal bruh.jpg", "rb"), filename="satsriakal.jpg")
         await message.channel.send(file=img)
         await message.channel.send(f'**Bruh moment successfully reported by {message.author.mention}**')
-    else:
-        obj = re.search(r"(valo(rant)?[?]?[\s]?[\$]?)", msg, re.IGNORECASE)
-        if obj or "<@&763655495285473300>" in msg.lower():
-            await message.channel.send(f"{message.author.mention} haan ruk bro mai aara")
+    # For valo
+    elif re.search(r"(valo(rant)?[?]?[\s]?[\$]?)", msg, re.IGNORECASE) or "<@&763655495285473300>" in msg.lower():
+        await message.channel.send(f"{message.author.mention} haan ruk bro mai aara")
 
     await pepe.process_commands(message)
-    conn.close()
 
 class MyHelpCommand(commands.DefaultHelpCommand):
     def get_command_signature(self, command):
@@ -91,7 +129,7 @@ class PepeTasks(commands.Cog):
         try:
             # LANGCODES has keys as languages, values as codes
             # LANGUAGES has keys as codes, values as languages 
-        
+            code = None
             if to_language in LANGCODES: # if language name was passed
                 code = LANGCODES[to_language]
             elif to_language in LANGUAGES: # if code was passed
@@ -169,19 +207,51 @@ class UtilityCommands(commands.Cog):
         try:
             # LANGCODES has keys as languages, values as codes
             # LANGUAGES has keys as codes, values as languages 
-        
-            if to_language in LANGCODES: # if language name was passed
+            code = None
+            if to_language in LANGCODES.keys(): # if language name was passed
+                # print("lang name was passed!!")
                 code = LANGCODES[to_language]
-            elif to_language in LANGUAGES: # if code was passed
+            elif to_language in LANGCODES.values(): # if code was passed
+                # print("lang code was passed!!")
                 code = to_language
+            else:
+                await ctx.send("Please enter a valid language!" +
+                "\nSyntax: pepe translate <text> <language-name>" +
+                "\nFor a list of supported languages, use \"pepe languages\"")
+
+            # print(f"Text to be translated: \"{text}\", type: {type(code)}")
+            # print(f"Recognized code: {code}, type: {type(code)}")
+            # print(f"to_language: {to_language}, type: {type(code)}")
 
             trans = Translator()
             translated_text = trans.translate(text, dest=code)
             await ctx.send(translated_text.text)#, tts=True)
         except:
-            await ctx.send("Please enter a valid language!" +
-            "\nSyntax: pepe translate <text> <language-name>" +
-            "\nFor a list of supported languages, use \"pepe languages\"")
+            traceback.print_exc()
+
+    @commands.command(
+    pass_context=True,
+    name = 'scores',
+    help = "Shows scores of all members in server!",
+    usage = "pepe scores [@optional_user_mention]"
+    )
+    async def scores (self, ctx, user: typing.Optional[discord.Member]):
+        output = []
+
+        conn = await init_db()
+        results = None
+        if user is None:
+            results = conn.fetch("SELECT * FROM pepepig_users ORDER BY score DESC")
+        else:
+            results = conn.fetch("SELECT * FROM pepepig_users WHERE member_id=$1 ORDER BY score DESC", user.id)
+        
+        for i, record in enumerate(results):
+            if i == 0:
+                output.append('\t'.join([key for key in record.keys()]))
+            output.append('\t'.join([value for value in record.values()]))
+
+        await ctx.send("```" + '\n' + '\n'.join(output) + "```")
+        conn.close()
 
 def setup(pepe):
     pepe.remove_command('help')
