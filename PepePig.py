@@ -246,7 +246,7 @@ class UtilityCommands(commands.Cog):
         for record in results:    
 	        output.append(f"{pepe.get_user(record['member_id']).mention}\t\t{record['score']}")
 
-        await ctx.send("```" + '\n' + '\n'.join(output) + "```")
+        await ctx.send('\n'.join(output))
         conn.close()
 
 def setup(pepe):
