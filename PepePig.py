@@ -61,7 +61,7 @@ async def on_message(message):
             new_score = await conn.fetchval("INSERT INTO pepepig_users (member_id, score, server_id) VALUES ($1, $2, $3) RETURNING score", author_id, increment_val, guild_id)
             print(f"New user entry for this server! New score for {message.author.display_name} = {new_score}")
         
-        conn.close()
+        await conn.close()
     except Exception as e:
         print(e)
         print("\nCOULDN'T CONNECT TO DATABASE!")
@@ -247,7 +247,7 @@ class UtilityCommands(commands.Cog):
             output.append("{:<20} {:<15}".format(pepe.get_user(record['member_id']).mention, record['score']))
 
         await ctx.send('\n'.join(output))
-        conn.close()
+        await conn.close()
 
 def setup(pepe):
     pepe.remove_command('help')
