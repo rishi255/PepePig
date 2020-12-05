@@ -2,3 +2,4 @@ asyncio
 discord
 typing
 googletrans
+asyncpg
