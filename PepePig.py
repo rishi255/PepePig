@@ -242,9 +242,9 @@ class UtilityCommands(commands.Cog):
         else:
             results = await conn.fetch("SELECT * FROM pepepig_users WHERE member_id=$1 AND server_id=$2 ORDER BY score DESC", user.id, ctx.guild.id)
         
-        output.append('user\t\tscore')
-        for record in results:    
-	        output.append(f"{pepe.get_user(record['member_id']).mention}\t\t{record['score']}")
+        output.append("{:<20} {:<15}".format("User", "Score"))
+        for i, record in enumerate(results):
+            output.append("{:<20} {:<15}".format(pepe.get_user(record['member_id']).mention, record['score']))
 
         await ctx.send('\n'.join(output))
         conn.close()
