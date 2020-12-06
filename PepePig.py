@@ -163,7 +163,7 @@ class UtilityCommands(commands.Cog):
     name = 'clear',
     help = "Clears the n most recent messages from specific/all users"
     )
-    async def clear(self, ctx, user: typing.Optional[discord.Member], number: typing.Optional[int] = 1):
+    async def clear(self, ctx, user: typing.Optional[discord.Member] = None, number: typing.Optional[int] = 1):
         if user is None:
             deleted = await ctx.channel.purge(limit=number+1)
             await ctx.send('{} deleted the last {} message(s) lol. Ab tu suspense me hi mar'.format(ctx.message.author.name, number))
@@ -232,7 +232,7 @@ class UtilityCommands(commands.Cog):
     help = "Shows scores of all members in server!",
     usage = "pepe scores [@optional_user_mention]"
     )
-    async def scores (self, ctx, user: typing.Optional[discord.Member]):
+    async def scores (self, ctx, user: typing.Optional[discord.Member] = None):
         output = []
 
         conn = await init_db()
