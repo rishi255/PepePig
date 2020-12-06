@@ -241,9 +241,9 @@ class UtilityCommands(commands.Cog):
         else:
             results = await conn.fetch("SELECT * FROM pepepig_users WHERE member_id=$1 AND server_id=$2 ORDER BY score DESC", mentioned_user.id, ctx.guild.id)
         
-        output.append("{:<30}{:<30}".format("User", "Score"))
+        output.append("{:<30}{:<30}\n".format("User", "Score"))
         for i, record in enumerate(results):
-            user = pepe.get_user(record['member_id'])
+            user = ctx.guild.get_member(record['member_id'])
             if user is not None:
                 output.append("{:<30}{:<30}".format(user.display_name, record['score']))
             else:
