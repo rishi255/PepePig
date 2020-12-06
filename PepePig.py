@@ -13,7 +13,10 @@ import traceback
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 
-pepe = commands.Bot(command_prefix='pepe ', help_command=None, description="I'm a cute bot made by @rishee#8641")
+intents = discord.Intents.default()
+intents.members = True
+
+pepe = commands.Bot(command_prefix='pepe ', help_command=None, description="I'm a cute bot made by @rishee#8641", intents=intents)
 
 @pepe.event
 async def on_ready():
