@@ -31,7 +31,7 @@ async def init_db() -> asyncpg.connection.Connection:
             server_id bigint
         )
     ''')
-    print("Create table if not exists done.")
+    # print("Create table if not exists done.")
     return conn
 
 @pepe.event
@@ -231,19 +231,23 @@ class UtilityCommands(commands.Cog):
     help = "Shows scores of all members in server!",
     usage = "pepe scores [@optional_user_mention]"
     )
-    async def scores (self, ctx, user: typing.Optional[discord.Member] = None):
+    async def scores (self, ctx, mentioned_user: typing.Optional[discord.Member] = None):
         output = []
 
         conn = await init_db()
         results = None
-        if user is None:
+        if mentioned_user is None:
             results = await conn.fetch("SELECT * FROM pepepig_users WHERE server_id=$1 ORDER BY score DESC", ctx.guild.id)
         else:
-            results = await conn.fetch("SELECT * FROM pepepig_users WHERE member_id=$1 AND server_id=$2 ORDER BY score DESC", user.id, ctx.guild.id)
+            results = await conn.fetch("SELECT * FROM pepepig_users WHERE member_id=$1 AND server_id=$2 ORDER BY score DESC", mentioned_user.id, ctx.guild.id)
         
         output.append("{:<30}{:<30}".format("User", "Score"))
         for i, record in enumerate(results):
-            output.append("{:<30}{:<30}".format(pepe.get_user(record['member_id']).display_name, record['score']))
+            user = pepe.get_user(record['member_id'])
+            if user is not None:
+                output.append("{:<30}{:<30}".format(user.display_name, record['score']))
+            else:
+                print(f"pepe.get_user() failed! (member_id = {record['member_id']} and server id = {ctx.guild.id}")
 
         await ctx.send('```\n' + '\n'.join(output) + '```')
         await conn.close()
