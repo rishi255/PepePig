@@ -13,7 +13,10 @@ import traceback
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 
-pepe = commands.Bot(command_prefix='pepe ', help_command=None, description="I'm a cute bot made by @rishee#8641")
+intents = discord.Intents.default()
+intents.members = True
+
+pepe = commands.Bot(command_prefix='pepe ', help_command=None, description="I'm a cute bot made by @rishee#8641", intents=intents)
 
 @pepe.event
 async def on_ready():
@@ -243,7 +246,7 @@ class UtilityCommands(commands.Cog):
         
         output.append("{:<30}{:<30}".format("User", "Score"))
         for i, record in enumerate(results):
-            user = pepe.get_user(record['member_id'])
+            user = ctx.guild.get_member(record['member_id'])
             if user is not None:
                 output.append("{:<30}{:<30}".format(user.display_name, record['score']))
             else:
