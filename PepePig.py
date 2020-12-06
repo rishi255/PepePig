@@ -4,7 +4,6 @@ import asyncpg
 from asyncpg.exceptions import InvalidPasswordError
 import discord
 from discord.ext import commands
-from discord.ext.commands.core import guild_only
 from googletrans import Translator, LANGCODES, LANGUAGES
 import typing
 import os
@@ -50,16 +49,16 @@ async def on_message(message):
         conn = await init_db()
 
         exists = await conn.fetchval("SELECT EXISTS (SELECT 1 FROM pepepig_users WHERE member_id=$1 AND server_id=$2)", author_id, guild_id)
-        print(f"Does user {message.author} exist in db? [{exists}]")
+        # print(f"Does user {message.author} exist in db? [{exists}]")
 
         increment_val = random.randint(20, 50)
 
         if exists:
             new_score = await conn.fetchval("UPDATE pepepig_users SET score=score+$1 WHERE member_id=$2 AND server_id=$3 RETURNING score", increment_val, author_id, guild_id)
-            print(f"User already has a score in this server! New score for {message.author.display_name} = {new_score}")
+            # print(f"User already has a score in this server! New score for {message.author.display_name} = {new_score}")
         else:
             new_score = await conn.fetchval("INSERT INTO pepepig_users (member_id, score, server_id) VALUES ($1, $2, $3) RETURNING score", author_id, increment_val, guild_id)
-            print(f"New user entry for this server! New score for {message.author.display_name} = {new_score}")
+            # print(f"New user entry for this server! New score for {message.author.display_name} = {new_score}")
         
         await conn.close()
     except Exception as e:
@@ -242,11 +241,11 @@ class UtilityCommands(commands.Cog):
         else:
             results = await conn.fetch("SELECT * FROM pepepig_users WHERE member_id=$1 AND server_id=$2 ORDER BY score DESC", user.id, ctx.guild.id)
         
-        output.append("{:<30} {:<30}".format("User", "Score"))
+        output.append("{:<30}{:<30}".format("User", "Score"))
         for i, record in enumerate(results):
-            output.append("{:<30} {:<30}".format(pepe.get_user(record['member_id']).mention, record['score']))
+            output.append("{:<30}{:<30}".format(pepe.get_user(record['member_id']).display_name, record['score']))
 
-        await ctx.send('\n'.join(output))
+        await ctx.send('```\n' + '\n'.join(output) + '```')
         await conn.close()
 
 def setup(pepe):
