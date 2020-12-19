@@ -1,15 +1,16 @@
 # bot.py
 import asyncio
 import asyncpg
-from asyncpg.exceptions import InvalidPasswordError
 import discord
 from discord.ext import commands
 from googletrans import Translator, LANGCODES, LANGUAGES
-import typing
+import json
 import os
 import random
 import re
 import traceback
+import typing
+from urllib import request
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 
@@ -140,7 +141,7 @@ class PepeTasks(commands.Cog):
 
         except:
             await ctx.send("Please enter a valid language!" +
-            "\nSyntax: pepe giveintro <language-name>" +
+            "\nUsage: ```pepe giveintro <language-name>```" +
             "\nFor a list of supported languages, use \"pepe languages\"")
 
     @commands.command(
@@ -215,7 +216,7 @@ class UtilityCommands(commands.Cog):
                 code = to_language
             else:
                 await ctx.send("Please enter a valid language!" +
-                "\nSyntax: pepe translate <text> <language-name>" +
+                "\nUsage: ```pepe translate <text> <language-name>```" +
                 "\nFor a list of supported languages, use \"pepe languages\"")
 
             # print(f"Text to be translated: \"{text}\", type: {type(code)}")
@@ -254,6 +255,46 @@ class UtilityCommands(commands.Cog):
 
         await ctx.send('```\n' + '\n'.join(output) + '```')
         await conn.close()
+
+    @commands.command(
+    pass_context=True,
+    name = 'emojify',
+    help = "Emojifies the given text",
+    usage = "pepe emojify <text to emojify>"
+    )
+    async def emojify(self, ctx):
+        text = ctx.message.content.split()[2:]
+
+        if text:
+            # emoji_url = request.urlopen("http://erikyangs.com/emojipastagenerator/emojiMapping.json")
+            # personal_emoji_url = request.urlopen("http://erikyangs.com/emojipastagenerator/personalEmojiMapping.json")
+
+            with open("emojiMapping.json", encoding="utf8") as emoji_mapping_file, open("personalEmojiMapping.json", encoding="utf8") as personal_mapping_file:
+                emoji_mapping = json.load(emoji_mapping_file)
+                personal_mapping = json.load(personal_mapping_file)
+                
+                output = ""
+                i = 0
+                while i < len(text):
+                    word = text[i]
+                    nextword = text[i+1] if i < len(text)-1 else ""
+
+                    if word.lower() in personal_mapping: # single word personal emoji match
+                        output += (word + " " + personal_mapping[word.lower()] + " ")
+                        i += 1
+                    elif (word.lower() + " " + nextword.lower()) in personal_mapping: # double word personal emoji match 
+                        #! THERE HAS TO BE A BETTER WAY TO DO THIS
+                        output += (word + " " + nextword + " " + personal_mapping[word.lower() + " " + nextword.lower()] + " ")
+                        i += 2
+                    elif word.lower() in emoji_mapping: # emoji match
+                        output += (word + " " + emoji_mapping[word.lower()] + " ")
+                        i += 1
+                    else: # no match at all. Just output the word
+                        output += (word + " ")
+                        i += 1
+                await ctx.send(output)
+        else:
+            await ctx.send("Usage: ```pepe emojify <text to emojify>```")
 
 def setup(pepe):
     pepe.remove_command('help')
