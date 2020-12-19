@@ -279,15 +279,15 @@ class UtilityCommands(commands.Cog):
                     word = text[i]
                     nextword = text[i+1] if i < len(text)-1 else ""
 
-                    if word in personal_mapping: # single word personal emoji match
-                        output += (word + " " + personal_mapping[word] + " ")
+                    if word.lower() in personal_mapping: # single word personal emoji match
+                        output += (word + " " + personal_mapping[word.lower()] + " ")
                         i += 1
-                    elif (word + " " + nextword) in personal_mapping: # double word personal emoji match 
+                    elif (word.lower() + " " + nextword.lower()) in personal_mapping: # double word personal emoji match 
                         #! THERE HAS TO BE A BETTER WAY TO DO THIS
-                        output += (word + " " + nextword + " " + personal_mapping[word + " " + nextword] + " ")
+                        output += (word + " " + nextword + " " + personal_mapping[word.lower() + " " + nextword.lower()] + " ")
                         i += 2
-                    elif word in emoji_mapping: # emoji match
-                        output += (word + " " + emoji_mapping[word] + " ")
+                    elif word.lower() in emoji_mapping: # emoji match
+                        output += (word + " " + emoji_mapping[word.lower()] + " ")
                         i += 1
                     else: # no match at all. Just output the word
                         output += (word + " ")
