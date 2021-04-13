@@ -1,16 +1,16 @@
 # bot.py
-import asyncio
-import asyncpg
-import discord
-from discord.ext import commands
-from googletrans import Translator, LANGCODES, LANGUAGES
 import json
 import os
 import random
 import re
 import traceback
 import typing
-from urllib import request
+
+import asyncpg
+import discord
+from discord.ext import commands
+from discord.ext.commands import CommandNotFound
+from googletrans import LANGCODES, LANGUAGES, Translator
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
@@ -45,6 +45,10 @@ async def init_db() -> asyncpg.connection.Connection:
     # print("Create table if not exists done.")
     return conn
 
+@pepe.event
+async def on_command_error(ctx, error):
+    if isinstance(error, CommandNotFound):
+        await ctx.channel.send("That's not a valid command! Type `pepe help` to get a list of commands.")
 
 @pepe.event
 async def on_message(message):
@@ -85,21 +89,25 @@ async def on_message(message):
                 guild_id,
             )
             # print(f"New user entry for this server! New score for {message.author.display_name} = {new_score}")
-
         await conn.close()
     except Exception as e:
         print(e)
         print("\nCOULDN'T CONNECT TO DATABASE!")
 
     msg = message.content
-    # ayy -> lmao
-    if msg.lower().startswith("ayy") and msg.lower().endswith("y"):
+    #? Call the rest of the stuff only if not an attempt to use the bot
+    prefixes = await pepe.get_prefix(message)
+    if isinstance(prefixes, list) and list(filter(lambda x: msg.startswith(x), prefixes)) \
+    or isinstance(prefixes, str) and msg.startswith(prefixes):
+        await pepe.process_commands(message)
+    #? ayy -> lmao
+    elif msg.lower().startswith("ayy") and msg.lower().endswith("y"):
         await message.channel.send(f"lmao {message.author.mention}")
-    # who daddy -> rishee
+    #? Easter egg (?)
     elif "who" in msg.lower() and "daddy" in msg.lower():
         Rishi = pepe.get_user(425968693424685056)
         await message.channel.send(f"{Rishi.mention} is my daddy.")
-    # For reporting bruh moment
+    #? For reporting bruh moment
     elif bool(re.match(r"[b]+[r]+[u]+[h]+", msg, re.IGNORECASE)):
         img = discord.File(
             open("media/satsriakal bruh.jpg", "rb"), filename="satsriakal.jpg"
@@ -115,9 +123,6 @@ async def on_message(message):
     ):
         await message.channel.send(f"{message.author.mention} haan ruk bro mai aara")
 
-    await pepe.process_commands(message)
-
-
 class MyHelpCommand(commands.DefaultHelpCommand):
     def get_command_signature(self, command):
         return "{0.clean_prefix}{1.qualified_name} - {1.signature}".format(
@@ -130,7 +135,7 @@ class MyHelpCommand(commands.DefaultHelpCommand):
 
 
 class HelpCog(
-    commands.Cog, command_attrs=dict(name="Help", usage="pepe help", hidden=True)
+    commands.Cog, command_attrs=dict(name="Help", usage="pepe help <optional category>", hidden=True)
 ):
     def __init__(self, bot):
         self.bot = bot
@@ -144,7 +149,7 @@ class HelpCog(
 
 class PepeTasks(commands.Cog):
     """
-    Contains first year tasks for bot-ragging purposes.
+    Contains first year tasks.
     """
 
     def __init__(self, bot):
@@ -153,7 +158,7 @@ class PepeTasks(commands.Cog):
     @commands.command(
         pass_context=True,
         name="giveintro",
-        help="Gives intro in various languages like a good first year boi.",
+        help="Gives intro in various languages.",
         usage="pepe giveintro <language-name>",
     )
     async def giveintro(self, ctx):
@@ -184,23 +189,22 @@ class PepeTasks(commands.Cog):
                 + '\nFor a list of supported languages, use "pepe languages"'
             )
 
-    @commands.command(
-        pass_context=True,
-        name="languages",
-        help="Lists all supported languages for intro",
-    )
-    async def languages(self, ctx):
-        text = [(lang, code) for lang, code in LANGCODES.items()]
-        await ctx.send("\n".join([f"{code}: {lang}" for code, lang in text]))
-
-
 class UtilityCommands(commands.Cog):
     """
-    Contains some useful commands (lmao jk)
+    Contains some useful commands
     """
 
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.command(
+    pass_context=True,
+    name="languages",
+    help="Lists all supported languages for translation",
+    )
+    async def languages(self, ctx):
+        text = [(lang, code) for lang, code in LANGCODES.items()]
+        await ctx.send("\n".join([f"{code}: {lang}" for code, lang in text]))
 
     @commands.command(
         pass_context=True,
@@ -236,10 +240,10 @@ class UtilityCommands(commands.Cog):
 
             await ctx.channel.delete_messages(to_delete)
             await ctx.send(
-                "{} deleted the last {} message(s) from user {} lol. Ab tu suspense me hi mar".format(
+                "{} deleted the last {} message(s) from user {}.".format(
                     ctx.message.author.name, number, user.display_name
                 )
-            )  # +'\n'.join([i.content for i in to_delete]))
+            )
 
     @commands.command(
         pass_context=True,
@@ -276,10 +280,6 @@ class UtilityCommands(commands.Cog):
                     + '\nFor a list of supported languages, use "pepe languages"'
                 )
 
-            # print(f"Text to be translated: \"{text}\", type: {type(code)}")
-            # print(f"Recognized code: {code}, type: {type(code)}")
-            # print(f"to_language: {to_language}, type: {type(code)}")
-
             trans = Translator()
             translated_text = trans.translate(text, dest=code)
             await ctx.send(translated_text.text)  # , tts=True)
@@ -315,9 +315,8 @@ class UtilityCommands(commands.Cog):
             if user is not None:
                 output.append("{:<30}{:<30}".format(user.display_name, record["score"]))
             else:
-                # this just means that the user isn't in the server anymore
+                #? if here, it just means that the user isn't in the server anymore
                 pass
-                # print(f"pepe.get_user() failed! (member_id = {record['member_id']} and server id = {ctx.guild.id}")
 
         await ctx.send("```\n" + "\n".join(output) + "```")
         await conn.close()
@@ -342,9 +341,8 @@ class UtilityCommands(commands.Cog):
             # emoji_url = request.urlopen("http://erikyangs.com/emojipastagenerator/emojiMapping.json")
             # personal_emoji_url = request.urlopen("http://erikyangs.com/emojipastagenerator/personalEmojiMapping.json")
 
-            with open("emojiMapping.json", encoding="utf8") as emoji_mapping_file, open(
-                "personalEmojiMapping.json", encoding="utf8"
-            ) as personal_mapping_file:
+            with open("emojiMapping.json", encoding="utf8") as emoji_mapping_file, \
+            open("personalEmojiMapping.json", encoding="utf8") as personal_mapping_file:
                 emoji_mapping = json.load(emoji_mapping_file)
                 personal_mapping = json.load(personal_mapping_file)
                 output = ""
@@ -395,7 +393,7 @@ class UtilityCommands(commands.Cog):
 
 def setup(pepe):
     pepe.remove_command("help")
-    pepe.add_cog(PepeTasks(pepe))
+    # pepe.add_cog(PepeTasks(pepe))
     pepe.add_cog(UtilityCommands(pepe))
     pepe.add_cog(HelpCog(pepe))
 
