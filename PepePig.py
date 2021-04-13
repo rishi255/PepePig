@@ -337,55 +337,46 @@ class UtilityCommands(commands.Cog):
         # text = [i.text for i in trans.translate(text, dest='en')]
         print(f"text={text}")
 
+        #? personal emoji match
+        def case1(): return word + " " + personal_mapping[word.lower()] + " "
+
+        #? translated personal emoji match    
+        def case2(): return word + " " + personal_mapping[translated_word.lower()] + " "
+        
+        #? emoji match
+        def case3(): return word + " " + emoji_mapping[word.lower()] + " "
+        
+        #? translated emoji match
+        def case4(): return word + " " + emoji_mapping[translated_word.lower()] + " "
+        
+        #? no match at all. Just add a random emoji with the word
+        def case5(): return word + " " + random.choice(personal_mapping["random_emojis_list"]) + " "
+        
         if text:
             # emoji_url = request.urlopen("http://erikyangs.com/emojipastagenerator/emojiMapping.json")
             # personal_emoji_url = request.urlopen("http://erikyangs.com/emojipastagenerator/personalEmojiMapping.json")
-
             with open("emojiMapping.json", encoding="utf8") as emoji_mapping_file, \
             open("personalEmojiMapping.json", encoding="utf8") as personal_mapping_file:
                 emoji_mapping = json.load(emoji_mapping_file)
                 personal_mapping = json.load(personal_mapping_file)
                 output = ""
-                i = 0
-                while i < len(text):
-                    word = text[i]
+                for i, word in enumerate(text):
                     translated_word = trans.translate(word, dest="en").text
-                    nextword = text[i + 1] if i < len(text) - 1 else ""
-                    translated_nextword = trans.translate(nextword, dest="en").text
 
-                    #? single word personal emoji match
-                    if word.lower() in personal_mapping:
-                        output += word + " " + personal_mapping[word.lower()] + " "
-                        i += 1
-                    elif translated_word.lower() in personal_mapping:
-                        output += word + " " + personal_mapping[translated_word.lower()] + " "
-                        i += 1
-                    #? double word personal match
-                    elif (word.lower() + " " + nextword.lower()) in personal_mapping:
-                        #! THERE HAS TO BE A BETTER WAY TO DO THIS
-                        output += (
-                            word + " " + nextword + " "
-                            + personal_mapping[word.lower() + " " + nextword.lower()] + " "
-                        )
-                        i += 2
-                    elif (translated_word.lower() + " " + translated_nextword.lower()) in personal_mapping:
-                        #! THERE HAS TO BE A BETTER WAY TO DO THIS
-                        output += (
-                            word + " " + nextword + " "
-                            + personal_mapping[translated_word.lower() + " " + translated_nextword.lower()] + " "
-                        )
-                        i += 2
-                    #? emoji match
-                    elif (word.lower() in emoji_mapping):
-                        output += word + " " + emoji_mapping[word.lower()] + " "
-                        i += 1
-                    elif (translated_word.lower() in emoji_mapping):
-                        output += word + " " + emoji_mapping[translated_word.lower()] + " "
-                        i += 1
-                    #? no match at all. Just add a random emoji with the word
-                    else:
-                        output += word + " " + random.choice(personal_mapping["random_emojis_list"]) + " "
-                        i += 1
+                    if word.isdigit():
+                        output += personal_mapping[word] + " " #; print("case0")
+                        continue
+                    elif word.lower() == "ok":
+                        output += personal_mapping[word.lower()] + " "
+                        continue
+
+                    #? try all funcs in order, stop at first non-error-throwing function
+                    for func in [case1, case2, case3, case4, case5]:
+                        try:
+                            output += func() #; print(func.__name__)
+                            break
+                        except:
+                            pass
                 await ctx.send(output)
         else:
             await ctx.send("Usage: ```pepe emojify <text to emojify>```")
