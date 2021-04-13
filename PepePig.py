@@ -382,9 +382,9 @@ class UtilityCommands(commands.Cog):
                     elif (translated_word.lower() in emoji_mapping):
                         output += word + " " + emoji_mapping[translated_word.lower()] + " "
                         i += 1
-                    #? no match at all. Just output the word
+                    #? no match at all. Just add a random emoji with the word
                     else:
-                        output += word + " "
+                        output += word + " " + random.choice(personal_mapping["random_emojis_list"]) + " "
                         i += 1
                 await ctx.send(output)
         else:
