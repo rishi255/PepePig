@@ -79,7 +79,7 @@ async def on_message(message):
         await message.channel.send(f'{Rishi.mention} is my daddy.')
     # For reporting bruh moment
     elif msg.lower().startswith('bruh') and msg.lower().endswith('h'):
-        img = discord.File(open("media\satsriakal bruh.jpg", "rb"), filename="satsriakal.jpg")
+        img = discord.File(open("media/satsriakal bruh.jpg", "rb"), filename="satsriakal.jpg")
         await message.channel.send(file=img)
         await message.channel.send(f'**Bruh moment successfully reported by {message.author.mention}**')
     # For valo
