@@ -3,3 +3,4 @@ discord
 typing
 googletrans==3.1.0a0
 asyncpg
+python-dotenv
