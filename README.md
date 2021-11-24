@@ -29,4 +29,6 @@ Use [this link](https://discord.com/oauth2/authorize?client_id=69495957020816189
 ## TODO
 
 - add interactive button help ([new discord.py feature](https://support.discord.com/hc/en-us/articles/1500012250861-Bots-Buttons))
-- improve emojify results
+- improve emojify results by:
+  - stemming & normalizing the text for searching in emojiMapping.json
+  - at some point, using an AI based emojifier since deterministic matching isn't that great
